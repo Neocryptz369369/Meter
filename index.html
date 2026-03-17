@@ -1,28 +1,97 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Taxi Order Form</title>
-</head>
-<body>
-    <h1>Taxi Order Form</h1>
-    <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
-        <input type="hidden" name="cmd" value="_xclick">
-        <input type="hidden" name="business" value="bestcabautogroup@yahoo.com">
-        <input type="hidden" name="item_name" value="Taxi Service">
-        <input type="hidden" name="currency_code" value="USD">
-        <label for="name">Your Name:</label><br>
-        <input type="text" id="name" name="name" required><br>
-        <label for="pickup">Pickup Location:</label><br>
-        <input type="text" id="pickup" name="pickup" required><br>
-        <label for="dropoff">Dropoff Location:</label><br>
-        <input type="text" id="dropoff" name="dropoff" required><br>
-        <label for="date">Date:</label><br>
-        <input type="date" id="date" name="date" required><br>
-        <label for="time">Time:</label><br>
-        <input type="time" id="time" name="time" required><br>
-        <input type="submit" value="Order Taxi">
-    </form>
-</body>
-</html>
+<div id="booking-container" style="max-width: 500px; font-family: Arial; border: 1px solid #ccc; padding: 20px; border-radius: 10px;">
+    <h3>Auto-Calculating Cab Booking</h3>
+    
+    <label>Pickup Address:</label>
+    <input type="text" id="pickup" placeholder="Enter Pickup Location" style="width:100%; margin-bottom:10px; padding:8px; box-sizing: border-box;">
+
+    <div id="stops-container">
+        <label>Destinations:</label>
+        <input type="text" class="stop-input" placeholder="Enter Destination" style="width:100%; margin-bottom:10px; padding:8px; box-sizing: border-box;">
+    </div>
+    
+    <button type="button" onclick="addStop()" style="background:#007bff; color:white; border:none; padding:8px 12px; margin-bottom:10px; border-radius:4px; cursor:pointer;">+ Add Another Stop</button>
+
+    <div style="background:#f9f9f9; padding:15px; margin-top:10px; border-radius:5px; border: 1px solid #eee;">
+        <strong>Total Distance:</strong> <span id="distance-display">0.0</span> miles<br>
+        <strong>Estimated Fare:</strong> $<span id="fare-display">0.00</span>
+    </div>
+
+    <div id="paypal-button-container" style="margin-top:20px;"></div>
+</div>
+
+<!-- Replace YOUR_GOOGLE_API_KEY and YOUR_PAYPAL_CLIENT_ID with real credentials -->
+<script src="https://maps.googleapis.com" async defer></script>
+<script src="https://www.paypal.com"></script>
+
+<script>
+    const RATE_PER_MILE = 2.50; 
+    const BASE_FARE = 5.00;
+    let totalFare = 0;
+
+    function initApp() {
+        setupAutocomplete(document.getElementById('pickup'));
+        document.querySelectorAll('.stop-input').forEach(input => setupAutocomplete(input));
+        renderPayPal();
+    }
+
+    function setupAutocomplete(inputElement) {
+        const autocomplete = new google.maps.places.Autocomplete(inputElement);
+        // Requirement: Address populates and then calculates price
+        autocomplete.addListener('place_changed', calculateTotalFare);
+    }
+
+    function addStop() {
+        const container = document.getElementById('stops-container');
+        const input = document.createElement('input');
+        input.type = "text";
+        input.className = "stop-input";
+        input.placeholder = "Enter Extra Stop";
+        input.style.cssText = "width:100%; margin-bottom:10px; padding:8px; box-sizing: border-box;";
+        container.appendChild(input);
+        setupAutocomplete(input);
+    }
+
+    function calculateTotalFare() {
+        const origin = document.getElementById('pickup').value;
+        const destinations = Array.from(document.querySelectorAll('.stop-input'))
+                                  .map(i => i.value).filter(v => v !== "");
+
+        if (!origin || destinations.length === 0) return;
+
+        const service = new google.maps.DirectionsService();
+        const waypoints = destinations.slice(0, -1).map(loc => ({ location: loc, stopover: true }));
+
+        service.route({
+            origin: origin,
+            destination: destinations[destinations.length - 1],
+            waypoints: waypoints,
+            travelMode: google.maps.TravelMode.DRIVING,
+        }, (result, status) => {
+            if (status === "OK") {
+                let meters = result.routes[0].legs.reduce((sum, leg) => sum + leg.distance.value, 0);
+                const miles = meters / 1609.34;
+                totalFare = (miles * RATE_PER_MILE) + BASE_FARE;
+
+                document.getElementById('distance-display').innerText = miles.toFixed(2);
+                document.getElementById('fare-display').innerText = totalFare.toFixed(2);
+            }
+        });
+    }
+
+    function renderPayPal() {
+        paypal.Buttons({
+            createOrder: (data, actions) => {
+                if (totalFare <= 0) {
+                    alert("Please enter valid locations first.");
+                    return;
+                }
+                return actions.order.create({
+                    purchase_units: [{
+                        amount: { value: totalFare.toFixed(2) },
+                        payee: { email_address: 'Bestcabautogroup@yahoo.com' }
+                    }]
+                });
+            }
+        }).render('#paypal-button-container');
+    }
+</script>
