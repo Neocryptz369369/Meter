@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taxi Order Form</title>
+</head>
+<body>
+    <h1>Taxi Order Form</h1>
+    <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+        <input type="hidden" name="cmd" value="_xclick">
+        <input type="hidden" name="business" value="bestcabautogroup@yahoo.com">
+        <input type="hidden" name="item_name" value="Taxi Service">
+        <input type="hidden" name="currency_code" value="USD">
+        <label for="name">Your Name:</label><br>
+        <input type="text" id="name" name="name" required><br>
+        <label for="pickup">Pickup Location:</label><br>
+        <input type="text" id="pickup" name="pickup" required><br>
+        <label for="dropoff">Dropoff Location:</label><br>
+        <input type="text" id="dropoff" name="dropoff" required><br>
+        <label for="date">Date:</label><br>
+        <input type="date" id="date" name="date" required><br>
+        <label for="time">Time:</label><br>
+        <input type="time" id="time" name="time" required><br>
+        <input type="submit" value="Order Taxi">
+    </form>
+</body>
+</html>
