@@ -2,45 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Title</title>
-    <!-- Other head elements -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_KEY&libraries=places" async defer></script>
+    <title>On Time Taxi - Booking</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_KEY&libraries=places"></script>
     <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="error-banner" style="display:none; color:red;"></div>
-    <form id="your-form">
-        <!-- Your form elements go here -->
-    </form>
-
-    <script>
-        function showError(message) {
-            const errorBanner = document.getElementById('error-banner');
-            errorBanner.textContent = message;
-            errorBanner.style.display = 'block';
-        }
-
-        function clearError() {
-            const errorBanner = document.getElementById('error-banner');
-            errorBanner.style.display = 'none';
-        }
-
-        function initAutocomplete() {
-            if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
-                showError('Google Maps Places library is missing.');
-                return;
-            }
-            // Your original initAutocomplete logic here
-        }
-
-        function renderPayPal() {
-            if (typeof paypal === 'undefined') {
-                showError('PayPal buttons library is missing.');
-                return;
-            }
-            // Your original renderPayPal logic here
-        }
-    </script>
+    <header>
+        <h1>ON TIME TAXI</h1>
+    </header>
+    <main>
+        <h2>Welcome to On Time Taxi</h2>
+        <p>Your ride is just a few clicks away!</p>
+        <h3>Why Choose Us?</h3>
+        <p>On Time Taxi is committed to providing the best taxi booking service in town.</p>
+    </main>
+    <footer>
+        <p>&copy; 2026 On Time Taxi</p>
+    </footer>
 </body>
 </html>
