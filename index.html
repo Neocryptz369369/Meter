@@ -3,26 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Page</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_PLACEHOLDER_KEY&libraries=places"></script>
-    <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PLACEHOLDER_CLIENT_ID&currency=USD"></script>
+    <title>Your Title</title>
+    <!-- Other head elements -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_KEY&libraries=places" async defer></script>
+    <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
 </head>
 <body>
-    <div id="error-banner" style="display: none; color: red;">
-        An error occurred. Please try again later.
-    </div>
-    <div id="app">
-        <!-- Existing UI components -->
-    </div>
+    <div id="error-banner" style="display:none; color:red;"></div>
+    <form id="your-form">
+        <!-- Your form elements go here -->
+    </form>
+
     <script>
-        // Google Maps and PayPal guard
-        if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
-            document.getElementById('error-banner').style.display = 'block';
+        function showError(message) {
+            const errorBanner = document.getElementById('error-banner');
+            errorBanner.textContent = message;
+            errorBanner.style.display = 'block';
         }
-        if (typeof paypal === 'undefined' || !paypal.Buttons) {
-            document.getElementById('error-banner').style.display = 'block';
+
+        function clearError() {
+            const errorBanner = document.getElementById('error-banner');
+            errorBanner.style.display = 'none';
         }
-        // Existing behavior code...
+
+        function initAutocomplete() {
+            if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
+                showError('Google Maps Places library is missing.');
+                return;
+            }
+            // Your original initAutocomplete logic here
+        }
+
+        function renderPayPal() {
+            if (typeof paypal === 'undefined') {
+                showError('PayPal buttons library is missing.');
+                return;
+            }
+            // Your original renderPayPal logic here
+        }
     </script>
 </body>
 </html>
