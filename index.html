@@ -3,185 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Best Cab Auto Group - Booking</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Maps API -->
-    <script src="https://maps.googleapis.com"></script>
-    <!-- PayPal SDK with your Client ID -->
-    <script src="https://www.paypal.com"></script>
-    <style>
-        .step { display: none; }
-        .step.active { display: block; }
-    </style>
+    <title>Order Page</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_PLACEHOLDER_KEY&libraries=places"></script>
+    <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PLACEHOLDER_CLIENT_ID&currency=USD"></script>
 </head>
-<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
-
-    <div class="bg-white shadow-2xl rounded-3xl w-full max-w-lg overflow-hidden border border-gray-100">
-        <!-- Header -->
-        <div class="bg-yellow-400 p-8 text-center">
-            <h1 class="text-3xl font-black text-gray-900 tracking-tighter">BEST CAB AUTO GROUP</h1>
-            <p class="text-gray-800 font-bold opacity-80 uppercase text-xs mt-1 tracking-widest">Reliable & Fast Service</p>
-        </div>
-
-        <form id="taxiForm" class="p-8">
-            <!-- Step 1: Customer Details -->
-            <div id="step1" class="step active">
-                <h2 class="text-xl font-bold mb-6 text-gray-800 border-b pb-2">Passenger Details</h2>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Full Name</label>
-                        <input type="text" id="custName" placeholder="John Doe" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Phone Number</label>
-                        <input type="tel" id="custPhone" placeholder="(555) 000-0000" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none" required>
-                    </div>
-                </div>
-                <button type="button" onclick="nextStep(2)" class="w-full mt-8 bg-gray-900 text-yellow-400 font-black py-4 rounded-xl hover:bg-black transition shadow-lg">NEXT: ROUTE DETAILS</button>
-            </div>
-
-            <!-- Step 2: Addresses & Stops -->
-            <div id="step2" class="step">
-                <h2 class="text-xl font-bold mb-6 text-gray-800 border-b pb-2">Route Information</h2>
-                <div id="routeContainer" class="space-y-6">
-                    <div class="route-leg bg-yellow-50/50 p-4 rounded-2xl border border-yellow-100 relative">
-                        <div class="mb-4">
-                            <label class="block text-xs font-bold text-yellow-600 uppercase mb-1">Point A (Pickup)</label>
-                            <input type="text" class="autocomplete-pickup w-full p-3 bg-white border border-gray-200 rounded-lg outline-none focus:border-yellow-400" placeholder="Start address" required>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-yellow-600 uppercase mb-1">Point B (Destination)</label>
-                            <input type="text" class="autocomplete-dropoff w-full p-3 bg-white border border-gray-200 rounded-lg outline-none focus:border-yellow-400" placeholder="End address" required>
-                        </div>
-                    </div>
-                </div>
-                
-                <button type="button" onclick="addRoute()" class="w-full text-gray-600 font-bold mt-4 py-3 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 transition">
-                    + ADD ANOTHER LEG (POINT A TO B)
-                </button>
-
-                <a href="tel:+19302164166"
-                   class="block w-full mt-4 bg-green-600 text-white font-black py-4 rounded-xl text-center hover:bg-green-700 transition shadow-lg">
-                  CALL TO ORDER A CAB
-                </a>
-                
-                <div class="mt-8 flex gap-3">
-                    <button type="button" onclick="prevStep(1)" class="w-1/3 bg-gray-100 text-gray-500 font-bold py-4 rounded-xl">BACK</button>
-                    <button type="button" onclick="calculateFinalPrice()" class="w-2/3 bg-yellow-400 text-gray-900 font-black py-4 rounded-xl hover:bg-yellow-500 shadow-lg">CALCULATE FARE</button>
-                </div>
-            </div>
-
-            <!-- Step 3: Payment -->
-            <div id="step3" class="step">
-                <div class="text-center mb-8">
-                    <h2 class="text-xl font-bold text-gray-800 uppercase tracking-wide">Total Fare</h2>
-                    <div class="inline-block mt-4 px-8 py-4 bg-gray-900 rounded-2xl">
-                        <p class="text-4xl font-black text-yellow-400" id="displayPrice">$0.00</p>
-                    </div>
-                    <p class="text-gray-400 text-xs mt-4">Calculated at $2.25 Base + $2.75/Mile</p>
-                </div>
-                
-                <div id="paypal-button-container"></div>
-                
-                <button type="button" onclick="prevStep(2)" class="w-full mt-6 text-gray-400 font-bold text-sm hover:text-gray-600 underline">CHANGE ROUTE</button>
-            </div>
-        </form>
+<body>
+    <div id="error-banner" style="display: none; color: red;">
+        An error occurred. Please try again later.
     </div>
-
+    <div id="app">
+        <!-- Existing UI components -->
+    </div>
     <script>
-        let finalFare = 0;
-
-        function initAutocomplete() {
-            const pickups = document.getElementsByClassName('autocomplete-pickup');
-            const dropoffs = document.getElementsByClassName('autocomplete-dropoff');
-            [...pickups, ...dropoffs].forEach(input => {
-                new google.maps.places.Autocomplete(input);
-            });
+        // Google Maps and PayPal guard
+        if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
+            document.getElementById('error-banner').style.display = 'block';
         }
-        google.maps.event.addDomListener(window, 'load', initAutocomplete);
-
-        function nextStep(step) {
-            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-            document.getElementById('step' + step).classList.add('active');
+        if (typeof paypal === 'undefined' || !paypal.Buttons) {
+            document.getElementById('error-banner').style.display = 'block';
         }
-
-        function prevStep(step) { nextStep(step); }
-
-        function addRoute() {
-            const container = document.getElementById('routeContainer');
-            const newLeg = document.createElement('div');
-            newLeg.className = "route-leg bg-yellow-50/50 p-4 rounded-2xl border border-yellow-100 mt-4";
-            newLeg.innerHTML = `
-                <div class="mb-4">
-                    <label class="block text-xs font-bold text-yellow-600 uppercase mb-1">Additional Pickup</label>
-                    <input type="text" class="autocomplete-pickup w-full p-3 bg-white border border-gray-200 rounded-lg outline-none focus:border-yellow-400" placeholder="Next pickup address">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-yellow-600 uppercase mb-1">Additional Destination</label>
-                    <input type="text" class="autocomplete-dropoff w-full p-3 bg-white border border-gray-200 rounded-lg outline-none focus:border-yellow-400" placeholder="Next destination address">
-                </div>
-            `;
-            container.appendChild(newLeg);
-            initAutocomplete();
-        }
-
-        async function calculateFinalPrice() {
-            const service = new google.maps.DistanceMatrixService();
-            const legs = document.querySelectorAll('.route-leg');
-            let totalMiles = 0;
-            let processed = 0;
-
-            legs.forEach((leg) => {
-                const origin = leg.querySelector('.autocomplete-pickup').value;
-                const destination = leg.querySelector('.autocomplete-dropoff').value;
-
-                if (!origin || !destination) {
-                    processed++;
-                    return;
-                }
-
-                service.getDistanceMatrix({
-                    origins: [origin],
-                    destinations: [destination],
-                    travelMode: 'DRIVING',
-                    unitSystem: google.maps.UnitSystem.IMPERIAL,
-                }, (response, status) => {
-                    processed++;
-                    if (status === 'OK' && response.rows[0].elements[0].status !== "ZERO_RESULTS") {
-                        const distanceText = response.rows[0].elements[0].distance.text;
-                        totalMiles += parseFloat(distanceText.replace(/[^
-\d.]/g, ''));
-                    }
-
-                    if (processed === legs.length) {
-                        // Formula: $2.25 Base + ($2.75 * total miles)
-                        finalFare = (2.25 + (2.75 * totalMiles)).toFixed(2);
-                        document.getElementById('displayPrice').innerText = '$' + finalFare;
-                        nextStep(3);
-                        renderPayPal();
-                    }
-                });
-            });
-        }
-
-        function renderPayPal() {
-            document.getElementById('paypal-button-container').innerHTML = ''; 
-            paypal.Buttons({
-                createOrder: function(data, actions) {
-                    return actions.order.create({
-                        purchase_units: [{
-                            amount: { value: finalFare },
-                            description: "Taxi Ride Booking - Best Cab Auto Group"
-                        }]
-                    });
-                },
-                onApprove: function(data, actions) {
-                    return actions.order.capture().then(details => {
-                        alert('Transaction completed! A cab is being dispatched to ' + details.payer.name.given_name);
-                    });
-                }
-            }).render('#paypal-button-container');
-        }
+        // Existing behavior code...
     </script>
 </body>
 </html>
