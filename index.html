@@ -1,26 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>On Time Taxi - Booking</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>On Time Taxi - Booking</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_KEY&libraries=places"></script>
+  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
 </head>
-<body>
-    <h1>ON TIME TAXI</h1>
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_KEY&libraries=places" async defer></script>
-    <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
-    <script>
-        function renderPayPal() {
-            paypal.Buttons({
-                createOrder: function(data, actions) {
-                    return actions.order.create({
-                        purchase_units: [{
-                            description: "Taxi Ride Booking - On Time Taxi"
-                        }]
-                    });
-                }
-            }).render('#paypal-button-container');
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
+  <main class="bg-white shadow-2xl rounded-3xl w-full max-w-lg overflow-hidden border border-gray-100">
+    <header class="bg-yellow-400 p-8 text-center">
+      <h1 class="text-3xl font-black text-gray-900 tracking-tighter">ON TIME TAXI</h1>
+      <p class="text-gray-800 font-bold opacity-80 uppercase text-xs mt-1 tracking-widest">Reliable & Fast Service</p>
+    </header>
+
+    <div class="p-8 space-y-6">
+      <div id="error-banner" class="hidden bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 text-sm"></div>
+
+      <section class="space-y-4">
+        <h2 class="text-xl font-bold text-gray-800">Passenger Details</h2>
+        <div>
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-1" for="custName">Full Name</label>
+          <input id="custName" type="text" placeholder="John Doe" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none" required />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-1" for="custPhone">Phone Number</label>
+          <input id="custPhone" type="tel" placeholder="(555) 000-0000" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none" required />
+        </div>
+      </section>
+
+      <section class="space-y-4">
+        <h2 class="text-xl font-bold text-gray-800">Trip Details</h2>
+        <div>
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-1" for="pickup">Pickup Address</label>
+          <input id="pickup" type="text" placeholder="Start address" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none" required />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-1" for="dropoff">Destination Address</label>
+          <input id="dropoff" type="text" placeholder="End address" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none" required />
+        </div>
+
+        <div class="bg-gray-900 rounded-2xl p-5 text-center">
+          <div class="text-xs font-bold tracking-widest text-gray-300 uppercase">Estimated Fare</div>
+          <div id="displayPrice" class="text-4xl font-black text-yellow-400 mt-2">$0.00</div>
+          <div class="text-[11px] text-gray-400 mt-2">Calculated at $2.25 base + $2.75/mile (estimate)</div>
+        </div>
+
+        <button id="calcBtn" type="button" class="w-full bg-yellow-400 text-gray-900 font-black py-4 rounded-xl hover:bg-yellow-500 shadow-lg">
+          CALCULATE FARE
+        </button>
+
+        <a href="tel:+19302164166" class="block w-full bg-green-600 text-white font-black py-4 rounded-xl text-center hover:bg-green-700 transition shadow-lg">
+          CALL TO ORDER A CAB
+        </a>
+      </section>
+
+      <section class="space-y-3">
+        <h2 class="text-xl font-bold text-gray-800">Payment</h2>
+        <div id="paypal-button-container" class="min-h-[44px]"></div>
+        <p class="text-xs text-gray-400">PayPal buttons will appear after you calculate the fare.</p>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const PRICING = { base: 2.25, perMile: 2.75 };
+    let finalFare = null;
+
+    function showError(msg) {
+      const el = document.getElementById('error-banner');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    function clearError() {
+      const el = document.getElementById('error-banner');
+      el.textContent = '';
+      el.classList.add('hidden');
+    }
+
+    function formatUsd(amount) {
+      return '$' + Number(amount).toFixed(2);
+    }
+
+    function validateFields() {
+      const name = document.getElementById('custName').value.trim();
+      const phone = document.getElementById('custPhone').value.trim();
+      const pickup = document.getElementById('pickup').value.trim();
+      const dropoff = document.getElementById('dropoff').value.trim();
+
+      if (!name) return 'Please enter your full name.';
+      if (!phone) return 'Please enter your phone number.';
+      if (!pickup) return 'Please enter a pickup address.';
+      if (!dropoff) return 'Please enter a destination address.';
+      if (pickup === dropoff) return 'Pickup and destination must be different.';
+      return null;
+    }
+
+    function initAutocomplete() {
+      if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
+        showError('Google Maps Places failed to load. Check YOUR_GOOGLE_MAPS_KEY and that Places API is enabled.');
+        return;
+      }
+
+      new google.maps.places.Autocomplete(document.getElementById('pickup'));
+      new google.maps.places.Autocomplete(document.getElementById('dropoff'));
+    }
+
+    function calculateFare() {
+      clearError();
+
+      const msg = validateFields();
+      if (msg) {
+        showError(msg);
+        return;
+      }
+
+      if (typeof google === 'undefined' || !google.maps) {
+        showError('Google Maps failed to load. Please try again later.');
+        return;
+      }
+
+      const pickup = document.getElementById('pickup').value.trim();
+      const dropoff = document.getElementById('dropoff').value.trim();
+
+      const service = new google.maps.DistanceMatrixService();
+
+      service.getDistanceMatrix(
+        {
+          origins: [pickup],
+          destinations: [dropoff],
+          travelMode: 'DRIVING',
+          unitSystem: google.maps.UnitSystem.IMPERIAL,
+        },
+        (response, status) => {
+          if (status !== 'OK') {
+            showError('Could not calculate distance right now (' + status + '). Please try again.');
+            return;
+          }
+
+          const element = response?.rows?.[0]?.elements?.[0];
+          if (!element || element.status !== 'OK') {
+            showError('Distance not available for that route. Please adjust the addresses.');
+            return;
+          }
+
+          // e.g. "12.3 mi"
+          const distanceText = element.distance?.text || '';
+          const miles = parseFloat(distanceText.replace(/[^0-9.]/g, ''));
+          if (!Number.isFinite(miles) || miles < 0) {
+            showError('Could not parse distance returned by Maps.');
+            return;
+          }
+
+          finalFare = (PRICING.base + PRICING.perMile * miles);
+          document.getElementById('displayPrice').textContent = formatUsd(finalFare);
+
+          renderPayPal();
         }
-    </script>
+      );
+    }
+
+    function renderPayPal() {
+      if (finalFare === null) return;
+
+      if (typeof paypal === 'undefined' || !paypal.Buttons) {
+        showError('PayPal failed to load. Check YOUR_PAYPAL_CLIENT_ID and try again.');
+        return;
+      }
+
+      const container = document.getElementById('paypal-button-container');
+      container.innerHTML = '';
+
+      paypal.Buttons({
+        createOrder: function (data, actions) {
+          return actions.order.create({
+            purchase_units: [
+              {
+                amount: { value: finalFare.toFixed(2) },
+                description: 'Taxi Ride Booking - On Time Taxi',
+              },
+            ],
+          });
+        },
+        onApprove: function (data, actions) {
+          return actions.order.capture().then(function (details) {
+            alert('Transaction completed! A cab is being dispatched to ' + details.payer.name.given_name);
+          });
+        },
+        onError: function (err) {
+          console.error(err);
+          showError('PayPal checkout error. Please try again or call to order.');
+        },
+      }).render('#paypal-button-container');
+    }
+
+    document.getElementById('calcBtn').addEventListener('click', calculateFare);
+
+    // Initialize autocomplete once the Maps script is ready.
+    window.addEventListener('load', () => {
+      // Maps may still be loading due to async/defer; try a few times.
+      let attempts = 0;
+      const timer = setInterval(() => {
+        attempts++;
+        if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+          clearInterval(timer);
+          initAutocomplete();
+        }
+        if (attempts >= 20) {
+          clearInterval(timer);
+          // Don't hard-fail the page; user can still type addresses manually.
+        }
+      }, 250);
+    });
+  </script>
 </body>
 </html>
