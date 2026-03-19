@@ -1,0 +1,2 @@
+window.OT_TAXI_GOOGLE_MAPS_KEY = "";
+window.OT_TAXI_PAYPAL_CLIENT_ID = "";
